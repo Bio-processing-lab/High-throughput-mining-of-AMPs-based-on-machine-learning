@@ -1,0 +1,2 @@
+# Here we using conda created a new env and install "EMBOSS" to do multiply small ORF predicted
+ls -d *.fa|while read id;do(getorf $id -find 0 -table 11 -minsize 15 -maxsize 150 -osdirectory_outseq <filename> $idorf.fa);done
