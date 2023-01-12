@@ -1,0 +1,162 @@
+# Selected length smaller than 50 AA proteom sequences
+  #!/usr/bin/perl -w
+  # perl count.pl all_seq.fa > less_50_data.fa
+  use strict;
+  my $in = $ARGV[0];
+  my $a;
+  my $temp = "";
+  open I,"<$in";
+  while(defined($a=<I>)){
+    $a =~ s/\n//gm;
+    $a =~ s/\s/_/gm;
+    if($a =~ />/){
+      $temp = $a;    
+    }else{
+      my @len = split //, $a;
+      my $le = @len;
+      if(4 < $le && $le < 51){
+        if($temp){
+          print"$temp\n$a\n";
+        }else{
+          print "$a\n";
+        }
+      }
+    }
+  }
+  close I; 
+# Transformation of c_AMPs sequences into fragments of a certain length, here we setting the length were contain from full length to half length;
+  #!/usr/bin/perl -w
+  use strict;
+  # usage perl kmer.pl Sequence.fa > mers.fa
+
+  my $in = $ARGV[0]; # Sequence.fa from "Result integration" section, and remove 2 head line. 
+  my $b;
+  my %h;
+  open I,"<$in";
+  while(defined($b=<I>)){
+      $b =~ s/\n//igm;
+      $b =~ s/\s//igm;
+      $b =~ s/\*//igm;
+      if($b =~ />/){}else{
+          my @pr = &kmer($b);
+          my $mers = join(',',@pr);
+          print "$b:$mers\n";
+      }
+  }
+  close I;
+
+  sub kmer{
+      (my $sequ) = @_;
+      my @a = split //, $sequ;
+      my $le = @a;
+      my $len = int($le/2)-1;
+      my $ii = 0;
+      my @se;
+      while($ii < $le){
+         my $leng_set = $len;
+         while($leng_set <= $le){
+             if($ii+$leng_set < $le){
+                 my $temp = join('',@a[$ii..$leng_set+$ii]);
+                 push @se, $temp;
+             }
+             $leng_set++;
+         }
+         $ii++;
+      }
+  return @se;
+  }
+# Set mers.fa to dictionary data format and every single mers from c_AMPs were setted as dictionary keys, the original c_AMPs were dictionary values
+# If the mers.fa over 2GB, you shuold split it to small files. Otherwise this script will cause system core dump :/, which will decide by your system memory (RAM) size.
+  split -1000 mers.fa
+  #!/usr/bin/perl -w
+  use strict;
+  # usage perl k_mer_dict.pl xaa key_values_01
+
+  my $in = $ARGV[0];
+  my $b;
+  my %h;
+  my $b1;
+  open I,"<$in";
+  while(defined($b=<I>)){
+      $b =~ s/\n//igm;
+      $b =~ s/(?<se>.*:)(?<k>.*)//igm;
+      $b1 = $+{se};
+      my $pp = $+{k};
+      my @pr = split /,/, $pp;
+      $b1 =~ s/://igm;
+      dic1(@pr,$b1);
+  }
+  close I;
+
+  sub dic1{
+      (my @ks) = @_;
+      my $va = $b1;
+      foreach my $kk (@ks){
+          $h{$kk}{$va} = 1;
+      }
+  }
+
+  foreach my $ke (keys %h){
+      my $h2 = $h{$ke};
+      my $k2 = join(',',keys %$h2);
+      print "$ke: ", $k2,"\n";
+  }
+# Selected the c_AMPs that appears in the proteome
+  #!/usr/bin/perl -w
+  use strict;
+  # usage perl run.pl key_values_01 proteom_less_50.fa key_values_01.out
+
+  my $in = $ARGV[0];
+  my $b;
+  my %h;
+  open I,"<$in";
+  while(defined($b=<I>)){
+      $b =~ s/\n//igm;
+      $b =~ s/(?<se>.*:)(?<k>.*)//igm;
+      my $b1 = $+{se};
+      my $pp = $+{k};
+      $b1 =~ s/\s//igm;
+      $b1 =~ s/://igm;
+      $pp =~ s/\s//igm;
+      $h{$b1} = $pp;
+  }
+  close I;
+
+  my $in1 = $ARGV[1];
+  my $a;
+  open II,"<$in1";
+  while(defined($a=<II>)){
+      $a =~ s/\n//igm;
+      $a =~ s/\s//igm;
+      $a =~ s/\*//igm;
+      if($a =~ />/){}else{
+          if($h{$a}){
+              print"$a:$h{$a}\n";
+          }
+      }
+  }
+  close II;
+ # Merge all *.out file to one file
+   cat *.out > selected_c_AMPs_out.txt
+ # Formatting output sequences
+   #!/usr/bin/perl -w
+  use strict;
+  # usage perl selec_seq_frmt.pl selected_c_AMPs_out.txt > selected_c_AMPs.fa
+
+  my $a;
+  my %h;
+  my $i = 1;
+  open I,"<$ARGV[0]";
+  while(defined($a=<I>)){
+      chomp($a);
+      my @aa = split(/:/, $a);
+      my $pp = $aa[1];
+      $pp =~ s/,/\n/igm;
+      $h{$pp} = ">c_APM".$i;
+      $i++;
+  }
+  close I;
+
+  foreach my $k (keys %h){
+      print "$h{$k}\n$k\n";
+  }
